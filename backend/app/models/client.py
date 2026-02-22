@@ -40,3 +40,5 @@ class Client(Base):
     accountant = relationship("Accountant", back_populates="clients")
     bank_accounts = relationship("BankAccount", back_populates="client", lazy="selectin")
     jobs = relationship("Job", back_populates="client", lazy="selectin")
+    bank_statements = relationship("BankStatement", back_populates="client", lazy="noload")
+    transactions = relationship("Transaction", back_populates="client", lazy="noload")

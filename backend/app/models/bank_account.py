@@ -27,3 +27,5 @@ class BankAccount(Base):
     )
 
     client = relationship("Client", back_populates="bank_accounts")
+    bank_statements = relationship("BankStatement", back_populates="bank_account", lazy="selectin")
+    transactions = relationship("Transaction", back_populates="bank_account", lazy="noload")

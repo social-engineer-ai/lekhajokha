@@ -45,6 +45,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-lekhajokha}:${POSTGRES_PASSWORD:-lekhajokha_dev}@postgres:5432/${POSTGRES_DB:-lekhajokha}
       REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: http://minio:9000
     ports:
       - "8001:8000"
     volumes:
@@ -54,6 +55,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      minio:
+        condition: service_started
 
   frontend:
     build:
