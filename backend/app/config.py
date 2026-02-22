@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     MINIO_SECRET_KEY: str = "minioadmin"
     MINIO_BUCKET: str = "lekhajokha"
 
+    # Google Cloud Vision (OCR)
+    GOOGLE_VISION_API_KEY: str = ""
+    GOOGLE_VISION_ENABLED: bool = False  # False = mock mode for dev
+
     # Ingest email domain (for auto-generated client emails)
     INGEST_EMAIL_DOMAIN: str = "ingest.lekhajokha.local"
 

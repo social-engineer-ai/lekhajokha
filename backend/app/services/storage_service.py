@@ -55,3 +55,8 @@ def download_file(key: str) -> bytes:
 def make_statement_key(client_id: str, statement_id: str, filename: str) -> str:
     """Build the S3 key for a bank statement."""
     return f"{client_id}/bank-statements/{statement_id}/{filename}"
+
+
+def make_invoice_key(client_id: str, invoice_id: str, filename: str) -> str:
+    """Build the S3 key for an invoice."""
+    return f"{client_id}/invoices/{invoice_id}/{filename}"
