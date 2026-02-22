@@ -27,6 +27,9 @@ class Client(Base):
     ingest_email: Mapped[str] = mapped_column(String(255), unique=True, nullable=True)
     gst_username: Mapped[str] = mapped_column(String(100), nullable=True)
     gst_filing_frequency: Mapped[str] = mapped_column(String(20), default="monthly")  # monthly/quarterly
+    tally_sync_scope: Mapped[str] = mapped_column(
+        String(30), default="invoices_and_reconciled"
+    )  # invoices_only, invoices_and_reconciled, all
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)

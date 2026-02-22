@@ -7,10 +7,12 @@ from app.models.transaction import Transaction
 from app.models.invoice import Invoice
 from app.models.invoice_line_item import InvoiceLineItem
 from app.models.reconciliation_match import ReconciliationMatch
+from app.models.tally_config import TallyConfig
 
 __all__ = [
     "Accountant", "Client", "BankAccount", "Job",
     "BankStatement", "Transaction",
     "Invoice", "InvoiceLineItem",
     "ReconciliationMatch",
+    "TallyConfig",
 ]

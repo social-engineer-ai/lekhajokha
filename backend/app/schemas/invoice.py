@@ -47,6 +47,7 @@ class InvoiceResponse(BaseModel):
     processing_error: str | None
     ocr_confidence: Decimal | None
     recon_status: str
+    tally_sync_status: str
     is_active: bool
     created_at: datetime
     updated_at: datetime

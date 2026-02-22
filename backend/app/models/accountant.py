@@ -29,3 +29,4 @@ class Accountant(Base):
     )
 
     clients = relationship("Client", back_populates="accountant", lazy="selectin")
+    tally_config = relationship("TallyConfig", back_populates="accountant", uselist=False, lazy="selectin")

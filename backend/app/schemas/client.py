@@ -44,6 +44,7 @@ class ClientUpdate(BaseModel):
     contact_email: str | None = None
     gst_username: str | None = None
     gst_filing_frequency: str | None = None
+    tally_sync_scope: str | None = None
 
     @field_validator("gstin")
     @classmethod
@@ -71,6 +72,7 @@ class ClientResponse(BaseModel):
     ingest_email: str | None
     gst_username: str | None
     gst_filing_frequency: str
+    tally_sync_scope: str
     is_active: bool
     created_at: datetime
     bank_accounts: list["BankAccountResponse"] = []

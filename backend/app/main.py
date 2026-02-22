@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, clients, bank_accounts, bank_statements, transactions, jobs, invoices, reconciliation
+from app.api import auth, clients, bank_accounts, bank_statements, transactions, jobs, invoices, reconciliation, tally, gst
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.APP_NAME,
-    version="0.4.0",
+    version="0.5.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -49,6 +49,8 @@ app.include_router(transactions.router, prefix="/api/v1")
 app.include_router(jobs.router, prefix="/api/v1")
 app.include_router(invoices.router, prefix="/api/v1")
 app.include_router(reconciliation.router, prefix="/api/v1")
+app.include_router(tally.router, prefix="/api/v1")
+app.include_router(gst.router, prefix="/api/v1")
 
 
 @app.get("/api/v1/health")

@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/stores/authStore";
+import { apiFetch } from "@/lib/api";
+import { TallyConfig } from "@/lib/types/tally";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, isLoading, isAuthenticated, fetchUser, logout } = useAuthStore();
+  const [tallyConnected, setTallyConnected] = useState<boolean | null>(null);
 
   useEffect(() => {
     fetchUser();
@@ -20,6 +23,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       router.push("/login");
     }
   }, [isLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      apiFetch<TallyConfig>("/tally/config")
+        .then((config) => setTallyConnected(config.is_connected))
+        .catch(() => setTallyConnected(false));
+    }
+  }, [isAuthenticated]);
 
   if (isLoading) {
     return (
@@ -48,8 +59,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-              Tally: Not Connected
+            <span
+              className={`text-xs px-2 py-1 rounded ${
+                tallyConnected
+                  ? "bg-green-100 text-green-800"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              Tally: {tallyConnected === null ? "..." : tallyConnected ? "Connected" : "Not Connected"}
             </span>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/settings">Settings</Link>
