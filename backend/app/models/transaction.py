@@ -55,3 +55,4 @@ class Transaction(Base):
     bank_statement = relationship("BankStatement", back_populates="transactions")
     bank_account = relationship("BankAccount", back_populates="transactions")
     client = relationship("Client", back_populates="transactions")
+    reconciliation_matches = relationship("ReconciliationMatch", back_populates="transaction", lazy="noload")

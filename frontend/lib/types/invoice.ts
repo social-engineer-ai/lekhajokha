@@ -37,6 +37,7 @@ export interface Invoice {
   processing_status: "pending" | "processing" | "completed" | "failed";
   processing_error: string | null;
   ocr_confidence: number | null;
+  recon_status: "unmatched" | "matched" | "partial";
   is_active: boolean;
   created_at: string;
   updated_at: string;

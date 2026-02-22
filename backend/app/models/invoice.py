@@ -38,6 +38,9 @@ class Invoice(Base):
     )  # pending, processing, completed, failed
     processing_error: Mapped[str] = mapped_column(Text, nullable=True)
     ocr_confidence = mapped_column(Numeric(5, 2), nullable=True)  # 0-100 percentage
+    recon_status: Mapped[str] = mapped_column(
+        String(20), default="unmatched"
+    )  # unmatched, matched, partial
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -50,3 +53,4 @@ class Invoice(Base):
 
     client = relationship("Client", back_populates="invoices")
     line_items = relationship("InvoiceLineItem", back_populates="invoice", lazy="selectin")
+    reconciliation_matches = relationship("ReconciliationMatch", back_populates="invoice", lazy="noload")

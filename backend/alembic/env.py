@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.config import settings
 from app.database import Base
-from app.models import Accountant, Client, BankAccount, Job, BankStatement, Transaction, Invoice, InvoiceLineItem  # noqa: F401 - ensure models are imported
+from app.models import Accountant, Client, BankAccount, Job, BankStatement, Transaction, Invoice, InvoiceLineItem, ReconciliationMatch  # noqa: F401 - ensure models are imported
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
