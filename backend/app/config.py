@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "LekhaJokha"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
+    PORT: int = 8000
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://lekhajokha:lekhajokha_dev@localhost:5432/lekhajokha"
