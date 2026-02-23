@@ -1,18 +1,145 @@
+"""OCR service for extracting text from invoice images and PDFs.
+
+Supports multiple OCR backends controlled by OCR_ENGINE setting:
+  - "paddleocr" (default) — self-hosted, no API key needed, best Indic accuracy
+  - "google_vision"       — Google Cloud Vision API (requires GOOGLE_VISION_API_KEY)
+  - "easyocr"             — self-hosted fallback (requires easyocr package)
+  - "mock"                — returns sample invoice text for dev/testing
+
+See docs/ocr-alternatives.md for full comparison and fine-tuning notes.
+"""
+
 import logging
 from io import BytesIO
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+# Lazy-initialized engine singletons
+_paddle_ocr = None
+_easyocr_reader = None
+
+
+# ── Public API (unchanged interface) ───────────────────────────────────
+
 
 def extract_text_from_image(image_bytes: bytes) -> tuple[str, float]:
-    """Extract text from an image using Google Cloud Vision or mock mode.
-    Returns (text, confidence 0-100).
-    """
-    if not settings.GOOGLE_VISION_ENABLED:
-        return _mock_extract()
+    """Extract text from an image. Returns (text, confidence 0-100)."""
+    engine = settings.OCR_ENGINE
 
+    if engine == "mock":
+        return _mock_extract()
+    if engine == "google_vision":
+        return _google_vision_image(image_bytes)
+    if engine == "easyocr":
+        return _easyocr_image(image_bytes)
+    # default: paddleocr
+    return _paddle_image(image_bytes)
+
+
+def extract_text_from_pdf(pdf_bytes: bytes) -> tuple[str, float]:
+    """Extract text from a PDF. Returns (concatenated text, avg confidence)."""
+    engine = settings.OCR_ENGINE
+
+    if engine == "mock":
+        return _mock_extract()
+    if engine == "google_vision":
+        return _google_vision_pdf(pdf_bytes)
+    # PaddleOCR and EasyOCR: convert PDF to images, then OCR each page
+    return _pdf_via_images(pdf_bytes, engine)
+
+
+# ── PaddleOCR engine ──────────────────────────────────────────────────
+
+
+def _get_paddle_ocr():
+    global _paddle_ocr
+    if _paddle_ocr is None:
+        from paddleocr import PaddleOCR
+
+        _paddle_ocr = PaddleOCR(
+            use_angle_cls=True,
+            lang=settings.OCR_LANG,
+            show_log=False,
+            use_gpu=False,
+        )
+        logger.info("PaddleOCR engine initialized (lang=%s)", settings.OCR_LANG)
+    return _paddle_ocr
+
+
+def _paddle_image(image_bytes: bytes) -> tuple[str, float]:
+    """Run PaddleOCR on image bytes."""
+    ocr = _get_paddle_ocr()
+
+    # PaddleOCR needs a file path or numpy array
+    with NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+        tmp.write(image_bytes)
+        tmp_path = tmp.name
+
+    try:
+        result = ocr.ocr(tmp_path, cls=True)
+    finally:
+        Path(tmp_path).unlink(missing_ok=True)
+
+    if not result or not result[0]:
+        return ("", 0.0)
+
+    lines = []
+    confidences = []
+    for line in result[0]:
+        text = line[1][0]
+        conf = line[1][1]
+        lines.append(text)
+        confidences.append(conf)
+
+    combined = "\n".join(lines)
+    avg_conf = (sum(confidences) / len(confidences) * 100) if confidences else 0.0
+    return (combined, round(avg_conf, 2))
+
+
+# ── EasyOCR engine ────────────────────────────────────────────────────
+
+
+def _get_easyocr_reader():
+    global _easyocr_reader
+    if _easyocr_reader is None:
+        import easyocr
+
+        langs = ["en"]
+        if settings.OCR_LANG in ("hi", "devanagari"):
+            langs.append("hi")
+        _easyocr_reader = easyocr.Reader(langs, gpu=False)
+        logger.info("EasyOCR reader initialized (langs=%s)", langs)
+    return _easyocr_reader
+
+
+def _easyocr_image(image_bytes: bytes) -> tuple[str, float]:
+    """Run EasyOCR on image bytes."""
+    reader = _get_easyocr_reader()
+    results = reader.readtext(image_bytes)
+
+    if not results:
+        return ("", 0.0)
+
+    lines = []
+    confidences = []
+    for bbox, text, conf in results:
+        lines.append(text)
+        confidences.append(conf)
+
+    combined = "\n".join(lines)
+    avg_conf = (sum(confidences) / len(confidences) * 100) if confidences else 0.0
+    return (combined, round(avg_conf, 2))
+
+
+# ── Google Cloud Vision engine ────────────────────────────────────────
+
+
+def _google_vision_image(image_bytes: bytes) -> tuple[str, float]:
+    """Run Google Cloud Vision document_text_detection on image bytes."""
     from google.cloud import vision
 
     client = vision.ImageAnnotatorClient()
@@ -26,7 +153,6 @@ def extract_text_from_image(image_bytes: bytes) -> tuple[str, float]:
         return ("", 0.0)
 
     text = response.full_text_annotation.text
-    # Average confidence across pages
     confidences = []
     for page in response.full_text_annotation.pages:
         for block in page.blocks:
@@ -36,33 +162,46 @@ def extract_text_from_image(image_bytes: bytes) -> tuple[str, float]:
     return (text, round(avg_confidence, 2))
 
 
-def extract_text_from_pdf(pdf_bytes: bytes) -> tuple[str, float]:
-    """Convert PDF pages to images and extract text from each.
-    Returns (concatenated text, average confidence).
-    """
-    if not settings.GOOGLE_VISION_ENABLED:
-        return _mock_extract()
+def _google_vision_pdf(pdf_bytes: bytes) -> tuple[str, float]:
+    """Convert PDF to images then run Google Vision on each page."""
+    return _pdf_via_images(pdf_bytes, "google_vision")
 
+
+# ── Shared PDF → image conversion ─────────────────────────────────────
+
+
+def _pdf_via_images(pdf_bytes: bytes, engine: str) -> tuple[str, float]:
+    """Generic PDF handler: convert pages to images, OCR each with given engine."""
     from pdf2image import convert_from_bytes
 
     images = convert_from_bytes(pdf_bytes, dpi=300)
     all_text = []
     all_confidences = []
 
+    # Pick the right image extractor
+    if engine == "easyocr":
+        img_fn = _easyocr_image
+    elif engine == "google_vision":
+        img_fn = _google_vision_image
+    else:
+        img_fn = _paddle_image
+
     for i, img in enumerate(images):
         buf = BytesIO()
         img.save(buf, format="PNG")
         page_bytes = buf.getvalue()
 
-        text, confidence = extract_text_from_image(page_bytes)
+        text, confidence = img_fn(page_bytes)
         if text:
             all_text.append(f"--- Page {i + 1} ---\n{text}")
             all_confidences.append(confidence)
 
     combined_text = "\n\n".join(all_text)
     avg_confidence = (sum(all_confidences) / len(all_confidences)) if all_confidences else 0.0
-
     return (combined_text, round(avg_confidence, 2))
+
+
+# ── Mock engine (dev/testing) ─────────────────────────────────────────
 
 
 def _mock_extract() -> tuple[str, float]:

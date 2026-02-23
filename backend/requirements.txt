@@ -15,8 +15,12 @@ email-validator==2.1.0.post1
 pdfplumber==0.11.0
 pikepdf==8.15.1
 boto3==1.34.34
-google-cloud-vision==3.7.2
+paddlepaddle==3.0.0
+paddleocr==3.0.0
 Pillow==10.2.0
 pdf2image==1.17.0
+# Optional OCR engines (install manually if switching OCR_ENGINE):
+# google-cloud-vision==3.7.2   # OCR_ENGINE=google_vision
+# easyocr==1.7.2               # OCR_ENGINE=easyocr
 twilio==9.0.0
 aiosmtplib==3.0.1

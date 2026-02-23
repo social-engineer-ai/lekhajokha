@@ -32,9 +32,10 @@ class Settings(BaseSettings):
     MINIO_SECRET_KEY: str = "minioadmin"
     MINIO_BUCKET: str = "lekhajokha"
 
-    # Google Cloud Vision (OCR)
-    GOOGLE_VISION_API_KEY: str = ""
-    GOOGLE_VISION_ENABLED: bool = False  # False = mock mode for dev
+    # OCR Engine: "paddleocr" (default, self-hosted), "google_vision", "easyocr", "mock"
+    OCR_ENGINE: str = "paddleocr"
+    OCR_LANG: str = "en"  # PaddleOCR/EasyOCR lang: "en", "hi", "ch", etc.
+    GOOGLE_VISION_API_KEY: str = ""  # only needed if OCR_ENGINE=google_vision
 
     # Twilio (WhatsApp)
     TWILIO_MOCK: bool = True
