@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import NullPool
 
 # Force test settings BEFORE importing app modules
-os.environ.update({
+_test_env = {
     "DATABASE_URL": "postgresql+asyncpg://lekhajokha:lekhajokha_dev@postgres:5432/lekhajokha_test",
     "OTP_MOCK": "true",
     "OCR_ENGINE": "mock",
@@ -23,7 +23,10 @@ os.environ.update({
     "SMTP_MOCK": "true",
     "CASHFREE_MOCK": "true",
     "DEBUG": "false",
-})
+}
+# Allow CI to override DATABASE_URL (e.g. localhost instead of docker hostname)
+for k, v in _test_env.items():
+    os.environ.setdefault(k, v)
 
 from app.database import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402

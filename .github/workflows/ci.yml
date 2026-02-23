@@ -30,7 +30,7 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql+asyncpg://lekhajokha:lekhajokha_dev@localhost:5432/lekhajokha
+      DATABASE_URL: postgresql+asyncpg://lekhajokha:lekhajokha_dev@localhost:5432/lekhajokha_test
       OTP_MOCK: "true"
       OCR_ENGINE: mock
       TWILIO_MOCK: "true"
