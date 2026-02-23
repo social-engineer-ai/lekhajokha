@@ -21,6 +21,7 @@ from app.schemas.vpa import (
     VpaEntryUpdate,
     VpaResolutionSummary,
 )
+from app.services.cashfree_service import verify_vpa as cashfree_verify_vpa
 from app.services.vpa_service import run_vpa_resolution, resolve_single_vpa
 
 router = APIRouter(prefix="/clients/{client_id}/vpa", tags=["vpa"])
@@ -277,9 +278,7 @@ async def verify_vpa_cashfree(
     if not entry:
         raise HTTPException(status_code=404, detail="VPA entry not found")
 
-    from app.services.cashfree_service import verify_vpa
-
-    verification = await verify_vpa(entry.vpa)
+    verification = await cashfree_verify_vpa(entry.vpa)
 
     # Update entry with Cashfree result
     if verification["is_valid"]:
