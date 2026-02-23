@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { InvoiceDetail as InvoiceDetailType } from "@/lib/types/invoice";
 import { Badge } from "@/components/ui/badge";
@@ -18,11 +18,7 @@ export function InvoiceDetail({ invoiceId, clientId, onRefresh }: InvoiceDetailP
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
 
-  useEffect(() => {
-    loadInvoice();
-  }, [invoiceId]);
-
-  const loadInvoice = async () => {
+  const loadInvoice = useCallback(async () => {
     setLoading(true);
     try {
       const data = await apiFetch<InvoiceDetailType>(
@@ -34,7 +30,11 @@ export function InvoiceDetail({ invoiceId, clientId, onRefresh }: InvoiceDetailP
     } finally {
       setLoading(false);
     }
-  };
+  }, [clientId, invoiceId]);
+
+  useEffect(() => {
+    loadInvoice();
+  }, [loadInvoice]);
 
   if (loading) {
     return (

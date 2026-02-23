@@ -27,9 +27,12 @@ export default function BankPage() {
       .then((data) => {
         const active = data.filter((a) => a.is_active);
         setAccounts(active);
-        if (active.length > 0 && !selectedAccountId) {
-          const primary = active.find((a) => a.is_primary);
-          setSelectedAccountId(primary?.id || active[0].id);
+        if (active.length > 0) {
+          setSelectedAccountId((prev) => {
+            if (prev) return prev;
+            const primary = active.find((a) => a.is_primary);
+            return primary?.id || active[0].id;
+          });
         }
       })
       .catch(() => {})
