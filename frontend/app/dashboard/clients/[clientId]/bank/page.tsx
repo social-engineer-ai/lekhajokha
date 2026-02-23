@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { BankAccount, BankStatement, Job } from "@/lib/types/bank";
 import { BankAccountSelector } from "@/components/bank/BankAccountSelector";
+import { BankAccountAddModal } from "@/components/bank/BankAccountAddModal";
 import { StatementUploadZone } from "@/components/bank/StatementUploadZone";
 import { ProcessingIndicator } from "@/components/bank/ProcessingIndicator";
 import { StatementList } from "@/components/bank/StatementList";
@@ -20,9 +21,10 @@ export default function BankPage() {
   const [statements, setStatements] = useState<BankStatement[]>([]);
   const [activeJobs, setActiveJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddBank, setShowAddBank] = useState(false);
 
   // Fetch bank accounts
-  useEffect(() => {
+  const fetchAccounts = useCallback(() => {
     apiFetch<BankAccount[]>(`/clients/${clientId}/bank-accounts/`)
       .then((data) => {
         const active = data.filter((a) => a.is_active);
@@ -38,6 +40,10 @@ export default function BankPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [clientId]);
+
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
 
   // Fetch statements when account changes
   const fetchStatements = useCallback(async () => {
@@ -79,6 +85,7 @@ export default function BankPage() {
         accounts={accounts}
         selectedId={selectedAccountId}
         onSelect={setSelectedAccountId}
+        onAddAccount={() => setShowAddBank(true)}
       />
 
       {selectedAccountId && (
@@ -116,6 +123,17 @@ export default function BankPage() {
             bankAccountId={selectedAccountId}
           />
         </>
+      )}
+
+      {showAddBank && (
+        <BankAccountAddModal
+          clientId={clientId}
+          onClose={() => setShowAddBank(false)}
+          onCreated={() => {
+            setShowAddBank(false);
+            fetchAccounts();
+          }}
+        />
       )}
     </div>
   );

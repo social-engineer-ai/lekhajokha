@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { formatDateLong } from "@/lib/format";
+import { BankAccountAddModal } from "@/components/bank/BankAccountAddModal";
 
 interface Client {
   id: string;
@@ -34,9 +36,14 @@ export default function ClientOverviewPage() {
   const params = useParams();
   const clientId = params.clientId as string;
   const [client, setClient] = useState<Client | null>(null);
+  const [showAddBank, setShowAddBank] = useState(false);
+
+  const fetchClient = () => {
+    apiFetch<Client>(`/clients/${clientId}`).then(setClient).catch(() => {});
+  };
 
   useEffect(() => {
-    apiFetch<Client>(`/clients/${clientId}`).then(setClient).catch(() => {});
+    fetchClient();
   }, [clientId]);
 
   if (!client) return null;
@@ -71,8 +78,11 @@ export default function ClientOverviewPage() {
       </Card>
 
       <Card className="md:col-span-2">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Bank Accounts</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => setShowAddBank(true)}>
+            + Add Account
+          </Button>
         </CardHeader>
         <CardContent>
           {client.bank_accounts.length === 0 ? (
@@ -102,6 +112,17 @@ export default function ClientOverviewPage() {
           <p className="text-muted-foreground text-sm">Coming in Phase 2 - monthly reconciliation status will appear here.</p>
         </CardContent>
       </Card>
+
+      {showAddBank && (
+        <BankAccountAddModal
+          clientId={clientId}
+          onClose={() => setShowAddBank(false)}
+          onCreated={() => {
+            setShowAddBank(false);
+            fetchClient();
+          }}
+        />
+      )}
     </div>
   );
 }

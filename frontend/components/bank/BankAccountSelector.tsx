@@ -6,14 +6,27 @@ interface BankAccountSelectorProps {
   accounts: BankAccount[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onAddAccount?: () => void;
 }
 
-export function BankAccountSelector({ accounts, selectedId, onSelect }: BankAccountSelectorProps) {
+export function BankAccountSelector({ accounts, selectedId, onSelect, onAddAccount }: BankAccountSelectorProps) {
   if (accounts.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        No bank accounts found. Add a bank account first in the Overview tab.
-      </p>
+      <div className="flex items-center gap-3">
+        <p className="text-sm text-muted-foreground">
+          No bank accounts found.
+        </p>
+        {onAddAccount ? (
+          <button
+            onClick={onAddAccount}
+            className="text-sm text-primary hover:underline font-medium"
+          >
+            + Add Account
+          </button>
+        ) : (
+          <span className="text-sm text-muted-foreground">Add a bank account first in the Overview tab.</span>
+        )}
+      </div>
     );
   }
 

@@ -25,6 +25,7 @@ export default function VpaPage() {
   const [loading, setLoading] = useState(true);
   const [resolving, setResolving] = useState(false);
   const [collecting, setCollecting] = useState(false);
+  const [collectMsg, setCollectMsg] = useState<{ text: string; isError: boolean } | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -61,12 +62,15 @@ export default function VpaPage() {
 
   const handleCollect = async () => {
     setCollecting(true);
+    setCollectMsg(null);
     try {
-      await apiFetch(`/clients/${clientId}/vpa/collect`, { method: "POST" });
-    } catch {
-      // ignore
+      const result = await apiFetch<{ message?: string }>(`/clients/${clientId}/vpa/collect`, { method: "POST" });
+      setCollectMsg({ text: result.message || "Collection request sent", isError: false });
+    } catch (err: unknown) {
+      setCollectMsg({ text: err instanceof Error ? err.message : "Failed to send collection request", isError: true });
     } finally {
       setCollecting(false);
+      setTimeout(() => setCollectMsg(null), 5000);
     }
   };
 
@@ -105,6 +109,13 @@ export default function VpaPage() {
           </Button>
         </div>
       </div>
+
+      {/* Collect feedback message */}
+      {collectMsg && (
+        <p className={`text-sm ${collectMsg.isError ? "text-destructive" : "text-green-600"}`}>
+          {collectMsg.text}
+        </p>
+      )}
 
       {/* Processing indicator */}
       {runningJob && (
