@@ -60,3 +60,13 @@ def make_statement_key(client_id: str, statement_id: str, filename: str) -> str:
 def make_invoice_key(client_id: str, invoice_id: str, filename: str) -> str:
     """Build the S3 key for an invoice."""
     return f"{client_id}/invoices/{invoice_id}/{filename}"
+
+
+def get_presigned_url(object_name: str, expires_in: int = 3600) -> str:
+    """Generate a presigned URL for downloading an object (1hr default)."""
+    client = _get_s3_client()
+    return client.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": settings.MINIO_BUCKET, "Key": object_name},
+        ExpiresIn=expires_in,
+    )

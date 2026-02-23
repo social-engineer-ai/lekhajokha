@@ -14,6 +14,7 @@ const tabs = [
   { label: "Invoices", href: "/invoices" },
   { label: "Reconciliation", href: "/reconciliation" },
   { label: "Tally", href: "/tally" },
+  { label: "VPA", href: "/vpa" },
   { label: "Messages", href: "/messages" },
   { label: "GST", href: "/gst" },
 ];

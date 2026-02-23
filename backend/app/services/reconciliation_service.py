@@ -159,6 +159,20 @@ async def run_reconciliation(client_id: uuid.UUID, job_id: uuid.UUID):
                 f"{matches_created} matches, {auto_confirmed} auto-confirmed"
             )
 
+            # Fire notification (fire-and-forget)
+            try:
+                from app.services.notification_service import notify
+                await notify(
+                    client_id=client_id,
+                    accountant_id=client.accountant_id,
+                    trigger_event="reconciliation_complete",
+                    context_data={
+                        "matched_count": str(matches_created),
+                    },
+                )
+            except Exception:
+                logger.debug("Notification dispatch failed (non-critical)", exc_info=True)
+
         except Exception as e:
             logger.exception(f"Error running reconciliation for client {client_id}: {e}")
             await db.rollback()

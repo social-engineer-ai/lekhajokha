@@ -47,3 +47,5 @@ class Client(Base):
     transactions = relationship("Transaction", back_populates="client", lazy="noload")
     invoices = relationship("Invoice", back_populates="client", lazy="noload")
     reconciliation_matches = relationship("ReconciliationMatch", back_populates="client", lazy="noload")
+    messages = relationship("Message", back_populates="client", lazy="noload")
+    vpa_entries = relationship("VpaEntry", back_populates="client", lazy="noload")

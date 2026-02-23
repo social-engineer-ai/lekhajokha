@@ -40,6 +40,9 @@ class Transaction(Base):
     recon_status: Mapped[str] = mapped_column(
         String(20), default="unmatched"
     )  # unmatched, matched, manual
+    vpa_entry_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("vpa_entries.id"), nullable=True, index=True
+    )
     tally_sync_status: Mapped[str] = mapped_column(
         String(20), default="pending"
     )  # pending, synced, error
@@ -55,4 +58,5 @@ class Transaction(Base):
     bank_statement = relationship("BankStatement", back_populates="transactions")
     bank_account = relationship("BankAccount", back_populates="transactions")
     client = relationship("Client", back_populates="transactions")
+    vpa_entry = relationship("VpaEntry", back_populates="transactions", lazy="noload")
     reconciliation_matches = relationship("ReconciliationMatch", back_populates="transaction", lazy="noload")

@@ -8,6 +8,10 @@ from app.models.invoice import Invoice
 from app.models.invoice_line_item import InvoiceLineItem
 from app.models.reconciliation_match import ReconciliationMatch
 from app.models.tally_config import TallyConfig
+from app.models.message import Message
+from app.models.message_template import MessageTemplate
+from app.models.messaging_config import MessagingConfig
+from app.models.vpa_entry import VpaEntry
 
 __all__ = [
     "Accountant", "Client", "BankAccount", "Job",
@@ -15,4 +19,6 @@ __all__ = [
     "Invoice", "InvoiceLineItem",
     "ReconciliationMatch",
     "TallyConfig",
+    "Message", "MessageTemplate", "MessagingConfig",
+    "VpaEntry",
 ]

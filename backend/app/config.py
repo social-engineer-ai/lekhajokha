@@ -36,6 +36,18 @@ class Settings(BaseSettings):
     GOOGLE_VISION_API_KEY: str = ""
     GOOGLE_VISION_ENABLED: bool = False  # False = mock mode for dev
 
+    # Twilio (WhatsApp)
+    TWILIO_MOCK: bool = True
+
+    # SMTP (Email)
+    SMTP_MOCK: bool = True
+
+    # Cashfree (UPI VPA verification)
+    CASHFREE_APP_ID: str = ""
+    CASHFREE_SECRET_KEY: str = ""
+    CASHFREE_MOCK: bool = True
+    CASHFREE_BASE_URL: str = "https://api.cashfree.com"
+
     # Ingest email domain (for auto-generated client emails)
     INGEST_EMAIL_DOMAIN: str = "ingest.lekhajokha.local"
 

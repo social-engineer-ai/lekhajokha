@@ -137,6 +137,21 @@ async def process_invoice(invoice_id: uuid.UUID, job_id: uuid.UUID):
             await db.commit()
             logger.info(f"Invoice {invoice_id}: processed with {len(line_item_models)} line items")
 
+            # Fire notification (fire-and-forget)
+            try:
+                from app.services.notification_service import notify
+                if client:
+                    await notify(
+                        client_id=invoice.client_id,
+                        accountant_id=client.accountant_id,
+                        trigger_event="invoice_ocr_done",
+                        context_data={
+                            "invoice_count": "1",
+                        },
+                    )
+            except Exception:
+                logger.debug("Notification dispatch failed (non-critical)", exc_info=True)
+
         except Exception as e:
             logger.exception(f"Error processing invoice {invoice_id}: {e}")
             await db.rollback()

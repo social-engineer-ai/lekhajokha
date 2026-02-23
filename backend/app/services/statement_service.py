@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import async_session
 from app.models.bank_account import BankAccount
 from app.models.bank_statement import BankStatement
+from app.models.client import Client
 from app.models.job import Job
 from app.models.transaction import Transaction
 from app.services.storage_service import download_file
@@ -133,6 +134,34 @@ async def process_statement(statement_id: uuid.UUID, job_id: uuid.UUID):
             logger.info(
                 f"Statement {statement_id}: parsed {len(transaction_models)} transactions"
             )
+
+            # Auto-tag UPI transactions with known VPAs (fire-and-forget)
+            try:
+                from app.services.vpa_service import tag_transactions_quick
+                upi_txns = [t for t in transaction_models if t.parsed_upi_id]
+                if upi_txns:
+                    await tag_transactions_quick(db, statement.client_id, upi_txns)
+            except Exception:
+                logger.debug("VPA quick-tagging failed (non-critical)", exc_info=True)
+
+            # Fire notification (fire-and-forget)
+            try:
+                from app.services.notification_service import notify
+                # Load client to get accountant_id
+                cl_result = await db.execute(select(Client).where(Client.id == statement.client_id))
+                cl = cl_result.scalar_one_or_none()
+                if cl:
+                    await notify(
+                        client_id=statement.client_id,
+                        accountant_id=cl.accountant_id,
+                        trigger_event="statement_processed",
+                        context_data={
+                            "bank_name": bank_account.bank_name if bank_account else (bank_key or "Unknown"),
+                            "txn_count": str(len(transaction_models)),
+                        },
+                    )
+            except Exception:
+                logger.debug("Notification dispatch failed (non-critical)", exc_info=True)
 
         except Exception as e:
             logger.exception(f"Error processing statement {statement_id}: {e}")

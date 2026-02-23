@@ -4,7 +4,8 @@ from datetime import date
 from decimal import Decimal
 from calendar import monthrange
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+import logging
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import Response
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +18,9 @@ from app.models.invoice import Invoice
 from app.schemas.gst import GSTReturnRequest, GSTR1Response, GSTR3BResponse, GSTSummary
 from app.services.gstr1_service import generate_gstr1
 from app.services.gstr3b_service import generate_gstr3b
+from app.services.notification_service import notify
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/clients/{client_id}/gst", tags=["gst"])
 
@@ -94,12 +98,21 @@ async def get_gst_summary(
 async def get_gstr1(
     client_id: uuid.UUID,
     data: GSTReturnRequest,
+    background_tasks: BackgroundTasks,
     current_user: Accountant = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Generate GSTR-1 from sales invoices."""
     await _verify_client_ownership(client_id, current_user, db)
     result = await generate_gstr1(client_id, data.month, data.year, db)
+
+    # Fire notification in background
+    period = f"{data.month:02d}/{data.year}"
+    background_tasks.add_task(
+        notify, client_id, current_user.id, "gst_return_ready",
+        {"return_type": "GSTR-1", "period": period},
+    )
+
     return GSTR1Response(**result)
 
 
@@ -136,12 +149,21 @@ async def export_gstr1(
 async def get_gstr3b(
     client_id: uuid.UUID,
     data: GSTReturnRequest,
+    background_tasks: BackgroundTasks,
     current_user: Accountant = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Generate GSTR-3B summary."""
     await _verify_client_ownership(client_id, current_user, db)
     result = await generate_gstr3b(client_id, data.month, data.year, db)
+
+    # Fire notification in background
+    period = f"{data.month:02d}/{data.year}"
+    background_tasks.add_task(
+        notify, client_id, current_user.id, "gst_return_ready",
+        {"return_type": "GSTR-3B", "period": period},
+    )
+
     return GSTR3BResponse(**result)
 
 

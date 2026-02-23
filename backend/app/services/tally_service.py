@@ -215,6 +215,20 @@ async def sync_to_tally(client_id: uuid.UUID, job_id: uuid.UUID):
 
             logger.info(f"Tally sync for client {client_id}: {job.result_summary}")
 
+            # Fire notification (fire-and-forget)
+            try:
+                from app.services.notification_service import notify
+                await notify(
+                    client_id=client_id,
+                    accountant_id=client.accountant_id,
+                    trigger_event="tally_sync_done",
+                    context_data={
+                        "voucher_count": str(len(vouchers)),
+                    },
+                )
+            except Exception:
+                logger.debug("Notification dispatch failed (non-critical)", exc_info=True)
+
         except Exception as e:
             logger.exception(f"Error syncing to Tally for client {client_id}: {e}")
             await db.rollback()
