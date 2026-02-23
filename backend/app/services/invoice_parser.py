@@ -213,8 +213,8 @@ def _parse_amount(text: str) -> Decimal | None:
     """Parse an amount string like '1,46,500.00' into a Decimal."""
     # Remove commas and whitespace
     cleaned = re.sub(r'[,\s]', '', text.strip())
-    # Remove currency symbols
-    cleaned = re.sub(r'[₹$Rs.INR]', '', cleaned, flags=re.IGNORECASE).strip()
+    # Remove currency symbols (Rs., ₹, $, INR)
+    cleaned = re.sub(r'Rs\.?|INR|[₹$]', '', cleaned, flags=re.IGNORECASE).strip()
     try:
         return Decimal(cleaned)
     except (InvalidOperation, ValueError):
@@ -227,9 +227,9 @@ def _extract_amounts(text: str) -> dict[str, Decimal | None]:
 
     patterns = {
         "taxable": re.compile(r'(?:Taxable\s*(?:Value|Amount)|Sub\s*Total|Net\s*Amount)[:\s]*[₹Rs.\s]*([\d,]+\.?\d*)', re.IGNORECASE),
-        "cgst": re.compile(r'CGST[^₹\d]*[₹Rs.\s]*([\d,]+\.?\d*)', re.IGNORECASE),
-        "sgst": re.compile(r'SGST[^₹\d]*[₹Rs.\s]*([\d,]+\.?\d*)', re.IGNORECASE),
-        "igst": re.compile(r'IGST[^₹\d]*[₹Rs.\s]*([\d,]+\.?\d*)', re.IGNORECASE),
+        "cgst": re.compile(r'CGST(?:\s*@?\s*\d+%)?[^₹\d]*[₹Rs.\s]*([\d,]+\.?\d*)', re.IGNORECASE),
+        "sgst": re.compile(r'SGST(?:\s*@?\s*\d+%)?[^₹\d]*[₹Rs.\s]*([\d,]+\.?\d*)', re.IGNORECASE),
+        "igst": re.compile(r'IGST(?:\s*@?\s*\d+%)?[^₹\d]*[₹Rs.\s]*([\d,]+\.?\d*)', re.IGNORECASE),
         "total_tax": re.compile(r'Total\s*Tax[:\s]*[₹Rs.\s]*([\d,]+\.?\d*)', re.IGNORECASE),
         "total": re.compile(r'(?:Grand\s*Total|Total\s*Amount|Invoice\s*Total|Total\s*(?:Value)?)[:\s]*[₹Rs.\s]*([\d,]+\.?\d*)', re.IGNORECASE),
     }
