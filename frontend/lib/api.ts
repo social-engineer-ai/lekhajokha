@@ -10,6 +10,19 @@ export class ApiError extends Error {
   }
 }
 
+function extractErrorMessage(detail: unknown, fallback: string): string {
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((e) => {
+        const field = e.loc?.slice(1).join(".") || "field";
+        return `${field}: ${e.msg}`;
+      })
+      .join("; ");
+  }
+  return fallback;
+}
+
 export async function apiFetch<T>(
   endpoint: string,
   options: FetchOptions = {}
@@ -41,7 +54,7 @@ export async function apiFetch<T>(
       const retry = await fetch(`${API_URL}${endpoint}`, { headers, ...rest });
       if (!retry.ok) {
         const err = await retry.json().catch(() => ({ detail: "Request failed" }));
-        throw new ApiError(retry.status, err.detail || "Request failed");
+        throw new ApiError(retry.status, extractErrorMessage(err.detail, "Request failed"));
       }
       if (retry.status === 204) return undefined as T;
       return retry.json();
@@ -55,7 +68,7 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: "Request failed" }));
-    throw new ApiError(res.status, err.detail || "Request failed");
+    throw new ApiError(res.status, extractErrorMessage(err.detail, "Request failed"));
   }
 
   if (res.status === 204) return undefined as T;
@@ -90,7 +103,7 @@ export async function apiUpload<T>(
       });
       if (!retry.ok) {
         const err = await retry.json().catch(() => ({ detail: "Upload failed" }));
-        throw new ApiError(retry.status, err.detail || "Upload failed");
+        throw new ApiError(retry.status, extractErrorMessage(err.detail, "Upload failed"));
       }
       return retry.json();
     }
@@ -102,7 +115,7 @@ export async function apiUpload<T>(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: "Upload failed" }));
-    throw new ApiError(res.status, err.detail || "Upload failed");
+    throw new ApiError(res.status, extractErrorMessage(err.detail, "Upload failed"));
   }
 
   return res.json();
