@@ -82,3 +82,13 @@ async def get_accountant_by_email(db: AsyncSession, email: str) -> Accountant | 
 async def get_accountant_by_phone(db: AsyncSession, phone: str) -> Accountant | None:
     result = await db.execute(select(Accountant).where(Accountant.phone == phone))
     return result.scalar_one_or_none()
+
+
+async def reset_password(db: AsyncSession, phone: str, new_password: str) -> Accountant | None:
+    accountant = await get_accountant_by_phone(db, phone)
+    if not accountant:
+        return None
+    accountant.hashed_password = hash_password(new_password)
+    await db.flush()
+    await db.refresh(accountant)
+    return accountant

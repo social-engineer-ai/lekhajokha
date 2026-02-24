@@ -14,6 +14,7 @@ from app.schemas.auth import (
     OTPVerifyRequest,
     RefreshRequest,
     RegisterRequest,
+    ResetPasswordRequest,
     TokenResponse,
 )
 from app.services.auth_service import (
@@ -22,6 +23,7 @@ from app.services.auth_service import (
     get_accountant_by_email,
     get_accountant_by_phone,
     register_accountant,
+    reset_password,
     send_otp,
     verify_otp,
 )
@@ -65,6 +67,16 @@ async def otp_verify(req: OTPVerifyRequest):
     if not verify_otp(req.phone, req.otp):
         raise HTTPException(status_code=400, detail="Invalid or expired OTP")
     return {"message": "OTP verified", "verified": True}
+
+
+@router.post("/reset-password")
+async def password_reset(req: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
+    if not verify_otp(req.phone, req.otp):
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+    accountant = await reset_password(db, req.phone, req.new_password)
+    if not accountant:
+        raise HTTPException(status_code=404, detail="No account found with this phone number")
+    return {"message": "Password reset successfully"}
 
 
 @router.post("/refresh", response_model=TokenResponse)
