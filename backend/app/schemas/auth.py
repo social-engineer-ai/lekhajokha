@@ -4,6 +4,16 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr, field_validator
 
 
+def _normalize_phone(v: str) -> str:
+    cleaned = v.strip().replace(" ", "").replace("-", "")
+    if not cleaned.startswith("+91"):
+        cleaned = "+91" + cleaned.lstrip("+")
+    digits = cleaned.replace("+", "")
+    if len(digits) != 12:  # 91 + 10 digits
+        raise ValueError("Phone must be a valid 10-digit Indian number")
+    return cleaned
+
+
 class RegisterRequest(BaseModel):
     email: EmailStr
     phone: str
@@ -14,13 +24,7 @@ class RegisterRequest(BaseModel):
     @field_validator("phone")
     @classmethod
     def validate_phone(cls, v: str) -> str:
-        cleaned = v.strip().replace(" ", "").replace("-", "")
-        if not cleaned.startswith("+91"):
-            cleaned = "+91" + cleaned.lstrip("+")
-        digits = cleaned.replace("+", "")
-        if len(digits) != 12:  # 91 + 10 digits
-            raise ValueError("Phone must be a valid 10-digit Indian number")
-        return cleaned
+        return _normalize_phone(v)
 
     @field_validator("password")
     @classmethod
@@ -38,10 +42,20 @@ class LoginRequest(BaseModel):
 class OTPSendRequest(BaseModel):
     phone: str
 
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        return _normalize_phone(v)
+
 
 class OTPVerifyRequest(BaseModel):
     phone: str
     otp: str
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        return _normalize_phone(v)
 
 
 class TokenResponse(BaseModel):
@@ -80,13 +94,7 @@ class ResetPasswordRequest(BaseModel):
     @field_validator("phone")
     @classmethod
     def validate_phone(cls, v: str) -> str:
-        cleaned = v.strip().replace(" ", "").replace("-", "")
-        if not cleaned.startswith("+91"):
-            cleaned = "+91" + cleaned.lstrip("+")
-        digits = cleaned.replace("+", "")
-        if len(digits) != 12:
-            raise ValueError("Phone must be a valid 10-digit Indian number")
-        return cleaned
+        return _normalize_phone(v)
 
     @field_validator("new_password")
     @classmethod
